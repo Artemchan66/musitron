@@ -1,0 +1,6 @@
+*.mp*
+*.flac
+*.jp*
+.env
+.vs*
+__pycache__
