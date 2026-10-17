@@ -58,3 +58,6 @@ python make_vinyl.py coolSongName.flac 1:30 coolSongCover.jpg --send --delete
 ## Telegram requests
 
 TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are managed through enviromental variables or `.env` file in the project root
+
+## TODO
+- Song name + album + year. Ex 
