@@ -6,12 +6,13 @@ import sys
 import requests
 import json
 import tempfile
-import re
+import time
 from dotenv import load_dotenv
 
 VINYL_RPM = 3;
 VINYL_IMAGESIZE_PX = 640;
 VIDEO_DURATION = 45;
+VIDEO_NAME = "out.mp4";
 
 def input_time_to_seconds(text):
     try:
@@ -28,7 +29,6 @@ def create_video(audio, cover, start, out):
         raise RuntimeError("ffmpeg not found on PATH")
 
     #video filter
-    overscan = int(VINYL_IMAGESIZE_PX * 1.05)
     vf = (
         f"crop='min(iw,ih)':'min(iw,ih)',scale={VINYL_IMAGESIZE_PX}:{VINYL_IMAGESIZE_PX},"
         f"rotate='t*2*PI*{VINYL_RPM}/60':ow={VINYL_IMAGESIZE_PX}:oh={VINYL_IMAGESIZE_PX},"
@@ -59,33 +59,46 @@ def create_video(audio, cover, start, out):
         raise RuntimeError("ffmpeg failed")
 
 
-def send_to_telegram(path, token, chat_id, title_json):
+def send_to_telegram(path, token, data):
 
     with open(path, "rb") as f:
         r = requests.post(
             f"https://api.telegram.org/bot{token}/sendVideoNote",
-            data={
-                "chat_id": chat_id, 
-                "length": VINYL_IMAGESIZE_PX, 
-                "duration": VIDEO_DURATION, 
-                "reply_markup": title_json},
+            data=data,
             files={"video_note": ("note.mp4", f, "video/mp4")},
         )
     if not r.json().get("ok"):
         raise RuntimeError(f"telegram error: {r.json().get('description')}")
 
-def generate_title(artist, title, album, year):
+def generate_tg_req_data(chat_id, title, artist, album, year):
 
-    with open("inline_keyboard_settings.json", "r") as file:
-        data = json.load(file)
+    title_line = f"{title} — {artist}";
+    album_line = f"{album} · {year}";
 
-    data["inline_keyboard"][0][0]["text"] = f"{title} — {artist}"
-    data["inline_keyboard"][0][0]["copy_text"]["text"] = f"{title} — {artist}"
-
-    data["inline_keyboard"][1][0]["text"] = f"{album} · {year}"
-    data["inline_keyboard"][1][0]["copy_text"]["text"] = f"{album} · {year}"
-
-    return json.dumps(data)
+    return {
+        "chat_id": chat_id, 
+        "length": VINYL_IMAGESIZE_PX, 
+        "duration": VIDEO_DURATION, 
+        "reply_markup": json.dumps({
+            "inline_keyboard": [[ 
+                {
+                    "text": title_line,
+                    "copy_text": {
+                        "text": title_line
+                    }
+                }
+            ],
+            [
+                {
+                    "text": album_line,
+                    "copy_text": {
+                        "text": album_line
+                        }
+                    }
+                ]
+            ]
+        })
+    }
 
 def parse_args():
     p = argparse.ArgumentParser()
@@ -96,27 +109,10 @@ def parse_args():
     p.add_argument("title")
     p.add_argument("album")
     p.add_argument("year")
-    p.add_argument("--out")
     p.add_argument("--send")
     p.add_argument("--delete", action="store_true")
 
-    args = p.parse_args()
-
-    if not args.out:
-        args.out = "out.mp4"
-
-    return args  
-
-def telegram_config(name):
-    load_dotenv()
-    name = name.upper()
-    chat_id = os.environ.get(f"TELEGRAM_CHAT_ID_{name}")
-    token = os.environ.get(f"TELEGRAM_BOT_TOKEN") or os.environ.get("TELEGRAM_BOT_TOKEN")
-    if not chat_id:
-        raise RuntimeError(f"TELEGRAM_CHAT_ID_{name} not set")
-    if not token:
-        raise RuntimeError(f"TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN not set")
-    return token, chat_id
+    return p.parse_args()  
 
 def normalize_cover(cover):
     out = os.path.join(tempfile.gettempdir(), "tgdj_cover.png")
@@ -132,20 +128,31 @@ def normalize_cover(cover):
     return out
 
 def main():
-    args = parse_args()
 
+    gen_time = time.time();
+    args = parse_args()
     try:
         start = input_time_to_seconds(args.start)
-        config = telegram_config(args.send) if args.send else None
         cover = normalize_cover(args.cover)
-        create_video(args.audio, cover, start, args.out)
-        print(args.out);
+        create_video(args.audio, cover, start, VIDEO_NAME)
+        print(f"Video generated: {round(time.time() - gen_time, 2)} seconds");
+        
         if args.send:
-            send_to_telegram(args.out, *config, generate_title(args.artist, args.title, args.album, args.year))
-            print("sent to tg");
+            send_time = time.time();
+            load_dotenv()
+            data = generate_tg_req_data(
+                os.environ.get(f"TELEGRAM_CHAT_ID_{args.send.upper()}"),
+                args.title,
+                args.artist,
+                args.album,
+                args.year
+            );
+            send_to_telegram(VIDEO_NAME, os.environ.get("TELEGRAM_BOT_TOKEN"), data)
+            print(f"Video sent: {round(time.time() - send_time, 2)} seconds");
+
         if args.delete:
-            os.remove(args.out)
-            print(f"deleted {args.out}")
+            os.remove(VIDEO_NAME)
+    
     except RuntimeError as e:
         sys.exit(str(e))
 
