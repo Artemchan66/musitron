@@ -1,4 +1,4 @@
-# telegramDJ
+# musitron
 
 Turns a slice of a song into a Telegram round video (video note): the cover image spins like a vinyl record while the music plays. It can optionally send the result straight to a Telegram chat.
 
@@ -59,5 +59,5 @@ python make_vinyl.py coolSongName.flac 1:30 coolSongCover.jpg --send --delete
 
 TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are managed through enviromental variables or `.env` file in the project root
 
-## TODO
-- Song name + album + year. Ex 
+## Links
+- https://www.piskelapp.com - logo creation

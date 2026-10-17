@@ -4,4 +4,4 @@
 .env
 .vs*
 __pycache__
-*.png
+/*.png
