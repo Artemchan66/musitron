@@ -1,8 +1,6 @@
 # musitron
 
-Turns a slice of a song into a Telegram round video (video note): the cover image spins like a vinyl record while the music plays. It can optionally send the result straight to a Telegram chat.
-
-The video is 30 seconds long, 640×640, spins at 4 RPM, and fades the audio in and out.
+Combines an audio file and image file into a spinning .mp4 video and optionally [sends video note to Telegram](https://core.telegram.org/bots/api#sendvideonote) with two copyable buttons made with [inline keyboards](https://core.telegram.org/bots/api#inlinekeyboardmarkup), that contain audio metadata: artist, title, album, year 
 
 ## Requirements
 
@@ -13,51 +11,52 @@ The video is 30 seconds long, 640×640, spins at 4 RPM, and fades the audio in a
 ```
 pip install requests python-dotenv
 ```
+- The following environment variables, set in the system or in a `.env` file in the project root:
+    - TELEGRAM_BOT_TOKEN
+    - TELEGRAM_CHAT_ID_MAIN
+    - TELEGRAM_CHAT_ID_TEST
+    - ROOT_AUDIO_DIRECTORY (D:\home\media\music)
 
 ## Usage
 
 ```
-python make_vinyl.py <audio> <start> <cover> [--out FILE] [--send]
+python musitron.py <ap> <cp> <st> [--artist <value>] [--year <value>] [--album <value>] [--title <value>] [--send main|test] [--delete]
 ```
 
 | Argument | Description |
 |---|---|
-| `audio` | Audio file (flac, mp3, wav, ...) |
-| `start` | Where the clip starts: `193`, `3:13` or `1:02:05` |
-| `cover` | Image to spin; it is cropped to a centered square |
-| `--out` | Output file, default `out.mp4` |
-| `--send` | Also send the video to Telegram |
-| `--delete` | Delete the generated video at the end |
+| `ap` | Audio path relative to ROOT_AUDIO_DIRECTORY |
+| `cp` | Image path relative to ROOT_AUDIO_DIRECTORY |
+| `st` | Audio start time: `193`, `3:13` or `1:02:05` |
+| `--artist` | Artist name shown in the inline keyboard button |
+| `--year` | Album year shown in the inline keyboard button |
+| `--album` | Album name shown in the inline keyboard button |
+| `--title` | Track title shown in the inline keyboard button |
+| `--send` | Send the video to Telegram: `main` or `test` chat |
+| `--delete` | Delete the generated video after finishing |
+
+### Auto-fetch audio metadata
+
+To simplify usage, metadata is parsed from the audio path with regexes. The expected layout is:
+
+```
+D:\home\media\music\coolArtist\2000-coolAlbum\02 coolTrack.flac
+```
+
+- `ROOT_AUDIO_DIRECTORY` must end with a folder named `music`
+- the album folder starts with a 4-digit year
+- the audio file is directly inside the album folder
+- a leading track number (`02 `) is stripped from the title
+
+If your path doesn't follow this layout, pass the metadata as parameters. Parameters override values parsed from the path
 
 ## Examples
 
-Make a clip starting at 1:30:
+Make a video starting at 1:30, send it to Telegram, delete the output:
 
 ```
-python make_vinyl.py coolSongName.flac 1:30 coolSongCover.jpg
+python musitron.py "coolArtist\2000-coolAlbum\coolTitle.flac" "coolArtist\2000-coolAlbum\coolCover.jpg" 1:30 --send main --delete
 ```
-
-Choose the output name:
-
-```
-python make_vinyl.py coolSongName.flac 1:30 coolSongCover.jpg --out coolVinyl.mp4
-```
-
-Make a clip and send it to Telegram:
-
-```
-python make_vinyl.py coolSongName.flac 1:30 coolSongCover.jpg --send
-```
-
-Send to Telegram without keeping the file:
-
-```
-python make_vinyl.py coolSongName.flac 1:30 coolSongCover.jpg --send --delete
-```
-
-## Telegram requests
-
-TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are managed through enviromental variables or `.env` file in the project root
 
 ## Links
 - https://www.piskelapp.com - logo creation
