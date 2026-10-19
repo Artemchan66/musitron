@@ -10,7 +10,7 @@ import time
 import re
 from dotenv import load_dotenv
 
-VINYL_RPM = 3;
+VINYL_RPM = 2;
 VINYL_IMAGESIZE_PX = 640;
 VIDEO_DURATION = 45;
 VIDEO_NAME = "out.mp4";
@@ -36,13 +36,7 @@ def create_video(audio_path, cover_path, audio_start, out):
     if not shutil.which("ffmpeg"):
         raise RuntimeError("ffmpeg not found on PATH")
 
-    #video filter
-    vf = (
-        f"crop='min(iw,ih)':'min(iw,ih)',scale={VINYL_IMAGESIZE_PX}:{VINYL_IMAGESIZE_PX},"
-        f"rotate='t*2*PI*{VINYL_RPM}/60':ow={VINYL_IMAGESIZE_PX}:oh={VINYL_IMAGESIZE_PX},"
-        f"format=yuv420p"
-    )
-    #audio filter
+    vf = f"rotate='t*2*PI*{VINYL_RPM}/60',format=yuv420p"
     af = f"afade=t=in:d=0.8,afade=t=out:st={VIDEO_DURATION - 1.5}:d=1.5"
     cmd = [
         "ffmpeg",
@@ -50,16 +44,21 @@ def create_video(audio_path, cover_path, audio_start, out):
         "-y",                                # overwrite output without asking
         "-loop", "1",                        # repeat the cover image forever
         "-framerate", "60",                  # fps of the looped image
-        "-i", cover_path,                         # input 0: cover
-        "-ss", str(audio_start),                   # before -i: fast seek in the audio to start
-        "-i", audio_path,                         # input 1: audio
+        "-i", cover_path,                    # input 0: cover
+        "-ss", str(audio_start),             # before -i: fast seek in the audio to start
+        "-i", audio_path,                    # input 1: audio
         "-map", "0:v",                       # video from the cover, not the flac's embedded art
         "-map", "1:a",                       # audio from the audio file
         "-vf", vf,                           # crop, scale, rotate, convert to yuv420p for phones
         "-af", af,                           # fade in and out
         "-t", str(VIDEO_DURATION),           # stop the endless image loop after N seconds
         "-c:v", "libx264",                   # H.264 video, plays everywhere
+        "-preset", "slow",
+        "-crf", "23",
+        "-maxrate", "1.8M",
+        "-bufsize", "3.6M",
         "-c:a", "aac",                       # AAC audio, standard for mp4
+        "-b:a", "128k",
         "-movflags", "+faststart",           # index at file start so it plays while downloading
         out,
     ]
@@ -128,7 +127,6 @@ def normalize_cover(cover_path):
         "ffmpeg", "-v", "error", "-y",
         "-i", cover_path,
         "-vf", f"crop='min(iw,ih)':'min(iw,ih)',scale={VINYL_IMAGESIZE_PX}:{VINYL_IMAGESIZE_PX}",
-        "-frames:v", "1",
         out,
     ]
     if subprocess.run(cmd).returncode:
