@@ -109,15 +109,15 @@ def generate_tg_req_data(chat_id, audio_metadata):
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("ap")
-    p.add_argument("cp")
-    p.add_argument("st")
-    p.add_argument("--artist")
-    p.add_argument("--title")
-    p.add_argument("--album")
-    p.add_argument("--year")
-    p.add_argument("--send", choices=["main", "test"])
-    p.add_argument("--delete", action="store_true")
+    p.add_argument("ap", help='full path to audio file')
+    p.add_argument("cp", help='full path to cover file')
+    p.add_argument("st", help='time, from which the audio file is going to start playing. possible formats: 193, 3:13 or 1:02:05')
+    p.add_argument("--artist", help='artist name. will override value from ap')
+    p.add_argument("--title", help='track title. will override value from ap')
+    p.add_argument("--album", help='album name. will override value from ap')
+    p.add_argument("--year", help='album release year. will override value from ap')
+    p.add_argument("--send", choices=["main", "test"], help='will send the output to one of the telegram channels')
+    p.add_argument("--delete", action="store_true", help='will delete locally generated output')
 
     return p.parse_args()  
 
