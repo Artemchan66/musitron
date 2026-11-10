@@ -55,8 +55,11 @@ If your path doesn't follow this layout, pass the metadata as parameters. Parame
 Make a video starting at 1:30, send it to Telegram, delete the output:
 
 ```
-python musitron.py "coolArtist\2000-coolAlbum\coolTitle.flac" "coolArtist\2000-coolAlbum\coolCover.jpg" 1:30 --send main --delete
+python musitron.py "Deftones\2006-Saturday Night Wrist\Pink Cellphone.flac" "Deftones\2006-Saturday Night Wrist\cover.jpg" 1:30 --send main --delete
 ```
+
+<img src="assets/example.gif" width="400" height="500"/>
+
 
 ## Links
 - https://www.piskelapp.com - logo creation
