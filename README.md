@@ -34,6 +34,7 @@ python musitron.py <ap> <cp> <st> [--artist <value>] [--year <value>] [--album <
 | `--title` | Track title shown in the inline keyboard button |
 | `--send` | Send the video to Telegram: `main` or `test` chat |
 | `--delete` | Delete the generated video after finishing |
+| `--zoom` | Album cover image multiplier |
 
 ### Auto-fetch audio metadata
 
