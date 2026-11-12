@@ -118,15 +118,16 @@ def parse_args():
     p.add_argument("--year", help='album release year. will override value from ap')
     p.add_argument("--send", choices=["main", "test"], help='will send the output to one of the telegram channels')
     p.add_argument("--delete", action="store_true", help='will delete locally generated output')
+    p.add_argument("--zoom", help='zoom multiplier for album cover. helps when white borders are appearing after sending to Telegram')
 
     return p.parse_args()  
 
-def normalize_cover(cover_path):
+def normalize_cover(cover_path, zoom_multiplier):
     out = os.path.join(tempfile.gettempdir(), "tgdj_cover.png")
     cmd = [
         "ffmpeg", "-v", "error", "-y",
         "-i", cover_path,
-        "-vf", f"crop='min(iw,ih)':'min(iw,ih)',scale={VINYL_IMAGESIZE_PX}:{VINYL_IMAGESIZE_PX}",
+        "-vf", f"crop='min(iw,ih)/{zoom_multiplier}':'min(iw,ih)/{zoom_multiplier}',scale={VINYL_IMAGESIZE_PX}:{VINYL_IMAGESIZE_PX}",
         out,
     ]
     if subprocess.run(cmd).returncode:
@@ -172,7 +173,7 @@ def main():
 
     try:
         audio_start = input_time_to_seconds(args.st)
-        normalized_cover_path = normalize_cover(full_cover_path)
+        normalized_cover_path = normalize_cover(full_cover_path, args.zoom)
         create_video(full_audio_path, normalized_cover_path, audio_start, VIDEO_NAME)
         print(f"Video generated: {round(time.time() - gen_time, 2)} seconds");
         
