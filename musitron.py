@@ -171,6 +171,9 @@ def main():
     full_cover_path = os.path.join(root, args.cp)
     audio_metadata = get_audio_metadata(full_audio_path, args)
 
+    if not args.zoom:
+        args.zoom = 1
+
     try:
         audio_start = input_time_to_seconds(args.st)
         normalized_cover_path = normalize_cover(full_cover_path, args.zoom)
